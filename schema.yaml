@@ -1,0 +1,185 @@
+start:
+  '#type': wizard_page
+  '#title': Start
+  start_page_content:
+    '#type': markup
+    '#markup': |
+      This is an example form schema used in this example
+travellers_declaration_1:
+  '#type': section
+  '#title': 'Traveller's Declaration'
+  traveller_identifier:
+    '#type': select_other
+    '#options':
+      1: Resident of the Yukon
+      2: Non-Resident of the Yukon (Not for transit to Alaska or other parts of
+        Canada)
+      3: Non-Resident of the Yukon (Only for transit to Alaska or other parts
+        of Canada)
+  traveller_name:
+    '#type': textfield
+    '#title': Name
+  traveller_address:
+    '#type': textfield
+    '#title': Address of your Residence (where you will be isolating yourself)
+  traveller_phone:
+    '#type': tel
+    '#title': Telephone Number (you must be available at this number)
+  traveller_purpose:
+    '#type': select_other
+    '#title': Purpose of Entry
+    '#options':
+      1: Travel to my place of residence in Yukon
+      2: Stay with a family member at their place of residence in Yukon
+      3: Provide critical or essential services in Yukon or in the BC-Yukon border area
+      4: Transit through Yukon as described in subsection 2(3) of the Health Order
+      5: Engage in activities described in the Traditional Activities Order
+  support_entrydocument:
+    '#type': textfield
+    '#title': Documentation to support your purpose for entering the Yukon
+  outside_canada:
+    '#type': radios
+    '#title': Have you been outside Canada in the last 14 days?
+    '#options':
+      1: Yes
+      2: No
+  locations_visited_14_days:
+    '#type': textfield
+    '#title': What locations have you visited in the last 14 days?
+  non_residient_not_transit_plan:
+    '#type': textfield
+    '#title': Isolation plan/Plan after 14 day isolation complete
+  non_resident.transit_plan:
+    '#type': textfield
+    '#title': Plan travelling through Yukon
+  resident_yukon_declaration:
+    '#type': radios
+    '#title': |
+      This information is true and correct. I am aware that if I am granted entry
+      to Yukon, the Chief Medical Officer of Health requires me to self-isolate for
+      14 days. If I am defined as an essential service, I must self-isolate for 14
+      days. If I am defined as a critical service, I am required to follow the direction
+      and guidelines for the delivery of critical services. I am also aware that I
+      must act in accordance with this declaration and any enforcement orders or health
+      emergency orders related to COVID-19.
+    '#options':
+      1: Agree
+      2: Disagree
+  covid_symptoms_yes_no:
+    '#type': radios
+    '#title': Do you have any COVID-19 symptoms?
+    '#options':
+      1: I have symptoms
+      2: No symptoms
+  covid_symptoms:
+    '#type': select_other
+    '#title': What symptoms are you experiencing?
+    '#options':
+      1: Cough
+      2: Fever
+      3: Difficulty breathing
+  non_resident_not_transit_declaration:
+    '#type': radios
+    '#title': |
+      This information is true and correct. I am aware that if I am granted entry
+      to Yukon, the Chief Medical Officer of Health requires me to self-isolate for
+      14 days. If I am defined as an essential service, I must self-isolate for 14
+      days. If I am defined as a critical service, I am required to follow the direction
+      and guidelines for the delivery of critical services. I am also aware that I
+      must act in accordance with this declaration and any enforcement orders or health
+      emergency orders related to COVID-19.
+    '#options':
+      1: Agree
+      2: Disagree
+  non_resident_transit_declaration:
+    '#type': radios
+    '#title': |
+      This information is true and correct. I am aware that the Civil Emergency
+      Measures Health Protection Order requires me to complete my transit of Yukon
+      within 24 hours of entry. Failure to comply with the Orders is punishable by
+      Law.
+    '#options':
+      1: Agree
+      2: Disagree
+travellers_declaration_2:
+  '#type': section
+  '#title': 'Traveller's Declaration'
+  point_of_entry_travel:
+    '#type': select_other
+    '#title': Point of Entry
+    '#options':
+      1: Whitehorse Airport
+      2: Alaska Hwy
+      3: Stewart Cassiar Hwy
+      4: Dempster Hwy
+      5: Dawson City Airport
+      6: Watson Lake Airport
+      7: Mayo Airport
+      8: Beaver Creek Airport
+      9: Burwash Landing Airport
+      10: Carcross Airport
+      11: Carmacks Airport
+      12: Faro Airport
+      13: Haines Junction Airport
+      14: Old Crow Airport
+      15: Pelly Crossing Airport
+      16: Ross River Airport
+      17: Teslin Airport
+  office_use_travel_mode:
+    '#type': select_other
+    '#title': Travel Mode
+    '#options':
+      1: Vehicle
+      2: Flight
+  office_use_license_plate:
+    '#type': textfield
+    '#title': License Plate
+  office_use_airline:
+    '#type': textfield
+    '#title': Airline
+  office_use_flight_number:
+    '#type': textfield
+    '#title': Flight Number/Registration Number
+  office_use_date_entry:
+    '#type': datelist
+    '#title': Date of Entry
+  office_use_time_entry:
+    '#type': textfield
+    '#title': Time of Entry (optional)
+  destionation_dropdown:
+    '#type': select_other
+    '#title': Destination
+    '#options':
+      1: Whitehorse
+      2: Beaver Creek
+      3: Burwash Landing
+      4: Carcross and Tagish
+      5: Carmacks
+      6: Dawson City
+      7: Faro
+      8: Haines Junction
+      9: Mayo
+      10: Mount Lorne
+      11: Old Crow
+      12: Pelly Crossing
+      13: Ross River
+      14: Teslin
+      15: Watson Lake
+      16: Outside Yukon
+  destination_other:
+    '#type': textfield
+    '#title': If destination is outside Yukon, please specify where
+  office_use_id:
+    '#type': select_other
+    '#title': Identification (provided to verify information on this form)
+    '#options':
+      1: Passport
+      2: Birth Certificate
+      3: Driver's License
+      4: Canadian military identification card
+      5: Government-issued identification card
+      6: Canadian citizenship card
+      7: Status card
+  office_use_additional_remarks:
+    '#type': textfield
+    '#title': Additional Remarks
