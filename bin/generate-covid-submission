@@ -1,0 +1,18 @@
+#!/usr/bin/env node
+const faker = require('faker')
+
+console.log(process.argv)
+
+const { PROOF_URL, PROOF_FORM_ID } = process.env
+
+// part of the curl command
+console.log('PROOF_URL', PROOF_URL)
+console.log('PROOF_FORM_ID', PROOF_FORM_ID)
+
+const submission = {
+
+}
+
+console.log(submission, null, 2)
+
+// post data via http or axios
