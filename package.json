@@ -7,4 +7,7 @@
   "author": "Andrew Kalek <akalek@proofgov.com>",
   "license": "MIT",
   "private": true,
+  "dependencies": {
+    "express": "^4.17.1"
+  }
 }
