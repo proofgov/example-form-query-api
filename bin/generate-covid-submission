@@ -2,6 +2,7 @@
 
 const { docopt } = require('docopt')
 const faker = require('faker/locale/en_CA')
+const http = require('http')
 
 const YUKON_COMMUNITIES = [
   'Beaver Creek',
@@ -186,8 +187,11 @@ console.log(submission, null, 2)
 
 doc = `
 Usage:
-  generate-covid-submission [--date=<date>] [--destination=<destination]
-  generate-covid-submission -h | --help | --version
+  generate-submission [--date=<date>] [--destination=<destination]
+  generate-submission -h | --help | --version
+
+Info:
+  preferred date format ISO Date  "2015-03-25" (The International Standard)
 `
 
 var arguments = docopt(doc, {
@@ -200,8 +204,26 @@ console.log(arguments)
 // requires --date and --destination options
 // console.log(process.argv)
 
-const { PROOF_URL, PROOF_FORM_ID } = process.env
+const { PROOF_URL, PROOF_FORM_ID, PROOF_FORM_PROVIDER } = process.env
 
-// part of the curl command
-console.log('PROOF_URL', PROOF_URL)
-console.log('PROOF_FORM_ID', PROOF_FORM_ID)
+const options = {
+  hostname: PROOF_URL,
+  port: 3000,
+  path: `/forms/${PROOF_FORM_PROVIDER}/${PROOF_FORM_ID}/submit`,
+  method: 'POST',
+}
+
+const req = http.request(options, res => {
+  console.log('statusCode:', res.statusCode)
+  // console.log('headers:', res.headers)
+
+  // res.on('data', d => {
+  //   process.stdout.write(d)
+  // })
+})
+
+req.on('error', e => {
+  console.error(e)
+})
+req.write(JSON.stringify(submission))
+req.end()
