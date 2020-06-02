@@ -181,14 +181,12 @@ const submission = {
   ),
 }
 
-console.log(submission, null, 2)
-
 // post data via http or axios
 
 doc = `
 Usage:
   generate-submission [--date=<date>] [--destination=<destination]
-  generate-submission -h | --help | --version
+  generate-submission -h | --help | --version | --dry-run
 
 Info:
   preferred date format ISO Date  "2015-03-25" (The International Standard)
@@ -197,8 +195,6 @@ Info:
 var arguments = docopt(doc, {
   version: '0.0.1',
 })
-
-console.log(arguments)
 
 // use docopt for arg parsing
 // requires --date and --destination options
@@ -213,17 +209,20 @@ const options = {
   method: 'POST',
 }
 
-const req = http.request(options, res => {
-  console.log('statusCode:', res.statusCode)
-  // console.log('headers:', res.headers)
+if (arguments['--dry-run']) {
+  console.log('Dry run of `generate-submission')
+  console.log('arguments =', arguments)
+  console.log('env =', { PROOF_URL, PROOF_FORM_ID, PROOF_FORM_PROVIDER })
+  console.log('submission =', submission)
+  console.log('options =', options)
+  process.exit()
+}
 
-  // res.on('data', d => {
-  //   process.stdout.write(d)
-  // })
+const request = http.request(options, response => {
+  console.log('statusCode:', response.statusCode)
 })
-
-req.on('error', e => {
+request.on('error', e => {
   console.error(e)
 })
-req.write(JSON.stringify(submission))
-req.end()
+request.write(JSON.stringify(submission))
+request.end()
