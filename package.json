@@ -6,5 +6,5 @@
   "repository": "git@github.com:proofgov/example-form-query-api.git",
   "author": "Andrew Kalek <akalek@proofgov.com>",
   "license": "MIT",
-  "private": false
+  "private": true,
 }
