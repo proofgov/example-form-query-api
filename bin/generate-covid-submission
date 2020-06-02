@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-const faker = require('faker/locale/en_CA')
+const faker = require("faker/locale/en_CA")
 
 // use docopt for arg parsing
 // requires --date and --destination options
@@ -8,8 +8,8 @@ const faker = require('faker/locale/en_CA')
 const { PROOF_URL, PROOF_FORM_ID } = process.env
 
 // part of the curl command
-console.log('PROOF_URL', PROOF_URL)
-console.log('PROOF_FORM_ID', PROOF_FORM_ID)
+console.log("PROOF_URL", PROOF_URL)
+console.log("PROOF_FORM_ID", PROOF_FORM_ID)
 
 const YUKON_COMMUNITIES = [
   "Beaver Creek",
@@ -29,9 +29,7 @@ const YUKON_COMMUNITIES = [
   "Whitehorse",
 ]
 
-SUPPORT_ENTRY_DOCUMENTS = [
-
-]
+SUPPORT_ENTRY_DOCUMENTS = [""]
 
 const IDENTIFICATION = [
   "Passport",
@@ -66,67 +64,128 @@ const POINTS_OF_ENTRY = [
 const AIRLINES_TO_THE_YUKON = ["Air North", "Air Canada"]
 
 const custom_fakes = {
-  ALPHABET: 'abcdefghijklmnopqrstuvwxyz'.split(''),
-  NUMBERS: '0123456789'.split(''),
-  fullName () {
+  ALPHABET: "abcdefghijklmnopqrstuvwxyz".split(""),
+  NUMBERS: "0123456789".split(""),
+  fullName() {
     return `${faker.name.firstName()} ${faker.name.lastName()}`
   },
-  yukonAddress () {
-    return `${faker.address.streetAddress()}, ${faker.random.arrayElement(YUKON_COMMUNITIES)}, YT, ${faker.address.zipCode()}`
+  yukonAddress() {
+    return `${faker.address.streetAddress()}, ${faker.random.arrayElement(
+      YUKON_COMMUNITIES
+    )}, YT, ${faker.address.zipCode()}`
   },
-  yukonLicensePlate () {
+  yukonLicensePlate() {
     return faker.random.alphaNumeric(5).toUpperCase()
   },
-  yukonPhoneNumber () {
+  yukonPhoneNumber() {
     return faker.phone.phoneNumber("867-###-###")
   },
-  flightNumber () {
-    return `${custom_fakes.alpha(2).toUpperCase()}${custom_fakes.numeric(faker.random.number({ min: 1, max: 4}))}`
+  flightNumber() {
+    return `${custom_fakes.alpha(2).toUpperCase()}${custom_fakes.numeric(
+      faker.random.number({ min: 1, max: 4 })
+    )}`
   },
-  alpha (count) {
+  alpha(count) {
     let wholeString = ""
-    for(let i = 0; i < (count || 1); i++) {
+    for (let i = 0; i < (count || 1); i++) {
       wholeString += faker.random.arrayElement(custom_fakes.ALPHABET)
     }
     return wholeString
   },
-  numeric (count) {
+  numeric(count) {
     let wholeString = ""
-    for(let i = 0; i < (count || 1); i++) {
+    for (let i = 0; i < (count || 1); i++) {
       wholeString += faker.random.arrayElement(custom_fakes.NUMBERS)
     }
     return wholeString
   },
 }
 
+// Conditional Form Logic Helpers
+const TRAVELLER_IDENTIFIERS = Object.freeze({
+  RESIDENT: 1,
+  NON_RESIDENT_NON_TRANSIT: 2,
+  NON_RESIDENT: 3,
+})
+const HAS_COVID_SYMPTOMS = Object.freeze({
+  YES: 1,
+  NO: 2,
+})
+const TRAVEL_MODE = Object.freeze({
+  VEHICLE: 1,
+  FLIGHT: 2,
+})
+const DESTINATIONS = Object.freeze([...YUKON_COMMUNITIES, "Outside Yukon"])
+const OUTSIDE_YUKON = DESTINATIONS.length
+
+const travellerIdentifier = faker.random.objectElement(TRAVELLER_IDENTIFIERS)
+const hasCovidSymtoms = faker.random.objectElement(HAS_COVID_SYMPTOMS)
+const travelMode = faker.random.objectElement(TRAVEL_MODE)
+const destination = faker.random.arrayElement(DESTINATIONS)
 
 const submission = {
-  traveller_identifier: faker.random.number({ min: 1, max: 3}),
+  traveller_identifier: travellerIdentifier,
   traveller_name: custom_fakes.fullName(),
   traveller_address: custom_fakes.yukonAddress(),
   traveller_phone: custom_fakes.yukonPhoneNumber(),
-  traveller_purpose: faker.random.number({ min: 1, max: 5}),
-  support_entrydocument: '',
-  outside_canada: faker.random.number({ min: 1, max: 2}),
-  locations_visited_14_days: faker.random.arrayElement([faker.address.city(), faker.address.country()]),
-  non_residient_not_transit_plan: faker.lorem.sentences(faker.random.number({ min: 1, max: 3})),
-  'non_resident.transit_plan': faker.lorem.sentences(faker.random.number({ min: 1, max: 3})),
-  resident_yukon_declaration: faker.random.number({ min: 1, max: 2}),
-  covid_symptoms_yes_no: faker.random.number({ min: 1, max: 2}),
-  covid_symptoms: faker.random.number({ min: 1, max: 3}),
-  non_resident_not_transit_declaration: faker.random.number({ min: 1, max: 2}),
-  non_resident_transit_declaration: faker.random.number({ min: 1, max: 2}),
-  point_of_entry_travel: faker.random.arrayElement(POINTS_OF_ENTRY.map((_, index) => index + 1)),
-  office_use_travel_mode: faker.random.number({ min: 1, max: 2}),
-  office_use_license_plate: custom_fakes.yukonLicensePlate(),
-  office_use_airline: faker.random.arrayElement(AIRLINES_TO_THE_YUKON),
-  office_use_flight_number: custom_fakes.flightNumber(),
+  traveller_purpose: faker.random.number({ min: 1, max: 5 }),
+  support_entrydocument: faker.random.arrayElement(SUPPORT_ENTRY_DOCUMENTS),
+  outside_canada: faker.random.number({ min: 1, max: 2 }),
+  locations_visited_14_days: faker.random.arrayElement([
+    faker.address.city(),
+    faker.address.country(),
+  ]),
+  non_residient_not_transit_plan:
+    travellerIdentifier === TRAVELLER_IDENTIFIERS.NON_RESIDENT_NON_TRANSIT
+      ? faker.lorem.sentences(faker.random.number({ min: 1, max: 3 }))
+      : "",
+  "non_resident.transit_plan":
+    travellerIdentifier === TRAVELLER_IDENTIFIERS.NON_RESIDENT
+      ? faker.lorem.sentences(faker.random.number({ min: 1, max: 3 }))
+      : "",
+  resident_yukon_declaration:
+    travellerIdentifier === TRAVELLER_IDENTIFIERS.RESIDENT
+      ? faker.random.number({ min: 1, max: 2 })
+      : null,
+  covid_symptoms_yes_no: hasCovidSymtoms,
+  covid_symptoms:
+    hasCovidSymtoms === HAS_COVID_SYMPTOMS.YES
+      ? faker.random.number({ min: 1, max: 3 })
+      : null,
+  non_resident_not_transit_declaration:
+    travellerIdentifier === TRAVELLER_IDENTIFIERS.NON_RESIDENT_NON_TRANSIT
+      ? faker.random.number({ min: 1, max: 2 })
+      : null,
+  non_resident_transit_declaration:
+    travellerIdentifier === TRAVELLER_IDENTIFIERS.NON_RESIDENT
+      ? faker.random.number({ min: 1, max: 2 })
+      : null,
+  point_of_entry_travel: faker.random.arrayElement(
+    POINTS_OF_ENTRY.map((_, index) => index + 1)
+  ),
+  office_use_travel_mode: travelMode,
+  office_use_license_plate:
+    travelMode === TRAVEL_MODE.VEHICLE ? custom_fakes.yukonLicensePlate() : "",
+  office_use_airline:
+    travelMode === TRAVEL_MODE.FLIGHT
+      ? faker.random.arrayElement(AIRLINES_TO_THE_YUKON)
+      : "",
+  office_use_flight_number:
+    travelMode === TRAVEL_MODE.FLIGHT ? custom_fakes.flightNumber() : "",
   office_use_date_entry: faker.date.recent(90).toLocaleDateString(),
   office_use_time_entry: faker.date.recent().toLocaleTimeString(),
-  destionation_dropdown: faker.random.arrayElement([...YUKON_COMMUNITIES, 'Outside Yukon']),
-  destination_other: faker.address.city(),
-  office_use_id: faker.random.arrayElement(IDENTIFICATION.map((_, index) => index + 1)),
-  office_use_additional_remarks: faker.lorem.sentences(faker.random.number({ min: 1, max: 3})),
+  destionation_dropdown: faker.random.arrayElement([
+    ...YUKON_COMMUNITIES,
+    "Outside Yukon",
+  ]),
+  destination_other:
+    destination === OUTSIDE_YUKON ? faker.address.city() : null,
+  office_use_id: faker.random.arrayElement(
+    IDENTIFICATION.map((_, index) => index + 1)
+  ),
+  office_use_additional_remarks: faker.lorem.sentences(
+    faker.random.number({ min: 0, max: 3 })
+  ),
 }
 
 console.log(submission, null, 2)
