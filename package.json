@@ -3,6 +3,9 @@
   "version": "0.0.1",
   "description": "Example Node App for Proof Form Query API",
   "main": "index.js",
+  "scripts": {
+    "server": "node index.js"
+  },
   "repository": "git@github.com:proofgov/example-form-query-api.git",
   "author": "Andrew Kalek <akalek@proofgov.com>",
   "license": "MIT",
