@@ -33,7 +33,7 @@ const { PROOF_URL, PROOF_FORM_ID, PROOF_FORM_PROVIDER } = process.env
 const options = {
   hostname: PROOF_URL,
   port: 3000,
-  path: `api/forms/${PROOF_FORM_PROVIDER}/${PROOF_FORM_ID}/schemata`,
+  path: `/api/forms/${PROOF_FORM_PROVIDER}/${PROOF_FORM_ID}/schemata`,
   method: 'POST',
 }
 
