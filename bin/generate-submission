@@ -206,11 +206,17 @@ const submission = {
 // Send the data
 const { PROOF_URL, PROOF_FORM_ID, PROOF_FORM_PROVIDER } = process.env
 
+const stringifiedSubmission = JSON.stringify(submission)
 const options = {
   hostname: PROOF_URL,
   port: 3000,
   path: `/forms/${PROOF_FORM_PROVIDER}/${PROOF_FORM_ID}/submit`,
   method: 'POST',
+  headers: {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    'Content-Length': Buffer.byteLength(stringifiedSubmission),
+  }
 }
 
 if (arguments['--dry-run']) {
@@ -224,9 +230,12 @@ if (arguments['--dry-run']) {
 
 const request = http.request(options, response => {
   console.log('statusCode:', response.statusCode)
+  response.on('data', chunk => {
+    console.log(`BODY: ${chunk}`)
+  })
 })
 request.on('error', e => {
   console.error(e)
 })
-request.write(JSON.stringify(submission))
+request.write(stringifiedSubmission)
 request.end()
