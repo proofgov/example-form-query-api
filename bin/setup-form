@@ -17,56 +17,148 @@ var arguments = docopt(doc, {
   version: '0.0.1',
 })
 
+// load environment variables
+const binDir = path.dirname(__filename)
+const providerInfoPath = path.resolve(binDir, '../provider_info.yaml')
+const {
+  PROOF_URL,
+  PROOF_FORM_ID,
+  PROOF_FORM_PROVIDER,
+  PROOF_FORM_PROVIDER_ID,
+  PROOF_API_TOKEN,
+} = process.env
+
+// Create form config
+function createFormConfig () {
+  function loadProviderInfo () {
+    let providerInfo
+    try {
+      providerInfo = yaml.safeLoad(fs.readFileSync(providerInfoPath, 'utf8'))
+    } catch (error) {
+      providerInfo = {}
+    }
+
+    return {
+      provider: PROOF_FORM_PROVIDER || providerInfo.provider || 'proof',
+      providerIdentifier:
+        PROOF_FORM_PROVIDER_ID ||
+        providerInfo.providerIdentifier ||
+        `proof/form-example/${Date.now()}`,
+    }
+  }
+
+  function saveProviderInfo ({ provider, providerIdentifier }) {
+    try {
+      fs.readFileSync(
+        providerInfoPath,
+        yaml.safeDump({ provider, providerIdentifier }),
+        'utf8'
+      )
+    } catch (error) {
+      console.log('error =', error)
+    }
+  }
+
+  const data = JSON.stringify(loadProviderInfo())
+  const options = {
+    hostname: PROOF_URL,
+    port: 3000,
+    path: '/api/form_configs',
+    method: 'POST',
+    headers: {
+      Accept: 'application/json',
+      Authorization: `Bearer ${PROOF_API_TOKEN}`,
+      'Content-Type': 'application/json',
+      'Content-Length': Buffer.byteLength(data),
+    },
+  }
+
+  const request = http.request(options, response => {
+    console.log('statusCode:', response.statusCode)
+    let json_body = ''
+    response.on('data', chunk => {
+      json_body += chunk
+      if (response.statusCode === 422) return
+
+      console.log(`BODY: ${chunk}`)
+    })
+    response.on('end', () => {
+      body = JSON.parse(json_body)
+      switch (response.statusCode) {
+        case 201:
+          saveProviderInfo(body)
+          break
+        case 422:
+          console.log('options =', options)
+          console.log('data =', JSON.parse(data))
+          console.log('error =', body.errors)
+          // Hard exit on failure
+          process.exit(1)
+          break
+        default:
+          console.log('Created new config.')
+          console.log('body', body)
+      }
+    })
+  })
+  request.on('error', error => {
+    console.error(error)
+  })
+  request.write(data)
+  request.end()
+}
+
+function updateSchema (schema) {
+  // Send the data
+  const data = JSON.stringify({ schema })
+  const options = {
+    hostname: PROOF_URL,
+    port: 3000,
+    path: `/api/forms/${PROOF_FORM_PROVIDER}/${PROOF_FORM_ID}/schemata`,
+    method: 'POST',
+    headers: {
+      Accept: 'application/json',
+      Authorization: `Bearer ${PROOF_API_TOKEN}`,
+      'Content-Type': 'application/json',
+      'Content-Length': Buffer.byteLength(data),
+    },
+  }
+  const request = http.request(options, response => {
+    console.log('statusCode:', response.statusCode)
+    response.on('data', chunk => {
+      console.log(`BODY: ${chunk}`)
+    })
+  })
+  request.on('error', error => {
+    console.error(error)
+  })
+  request.write(data)
+  request.end()
+}
+
 // Get document, or throw exception on error
 let schema
 try {
-  const binDir = path.dirname(__filename)
   const schemaPath = path.resolve(binDir, '../schema.yaml')
   schema = yaml.safeLoad(fs.readFileSync(schemaPath, 'utf8'))
 } catch (error) {
   console.log(error)
 }
 
-// Send the data
-const {
-  PROOF_URL,
-  PROOF_FORM_ID,
-  PROOF_FORM_PROVIDER,
-  PROOF_API_TOKEN,
-} = process.env
-
-const stringifiedSchema = JSON.stringify({ schema })
-const options = {
-  hostname: PROOF_URL,
-  port: 3000,
-  path: `/api/forms/${PROOF_FORM_PROVIDER}/${PROOF_FORM_ID}/schemata`,
-  method: 'POST',
-  headers: {
-    Accept: 'application/json',
-    Authorization: `Bearer ${PROOF_API_TOKEN}`,
-    'Content-Type': 'application/json',
-    'Content-Length': Buffer.byteLength(stringifiedSchema),
-  },
-}
-
 if (arguments['--dry-run']) {
   const scriptName = path.basename(__filename)
   console.log(`Dry run of "bin/${scriptName}"\n`)
   console.log('arguments =', arguments)
-  console.log('env =', { PROOF_URL, PROOF_FORM_ID, PROOF_FORM_PROVIDER })
+  console.log('env =', {
+    PROOF_URL,
+    PROOF_FORM_ID,
+    PROOF_FORM_PROVIDER,
+    PROOF_FORM_PROVIDER_ID,
+    PROOF_API_TOKEN,
+  })
   console.log('schema =', schema)
-  console.log('options =', options)
   process.exit()
 }
 
-const request = http.request(options, response => {
-  console.log('statusCode:', response.statusCode)
-  response.on('data', chunk => {
-    console.log(`BODY: ${chunk}`)
-  })
-})
-request.on('error', error => {
-  console.error(error)
-})
-request.write(stringifiedSchema)
-request.end()
+createFormConfig()
+// updateSchema(schema)
