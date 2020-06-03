@@ -28,13 +28,25 @@ try {
 }
 
 // Send the data
-const { PROOF_URL, PROOF_FORM_ID, PROOF_FORM_PROVIDER } = process.env
+const {
+  PROOF_URL,
+  PROOF_FORM_ID,
+  PROOF_FORM_PROVIDER,
+  PROOF_API_TOKEN,
+} = process.env
 
+const stringifiedSchema = JSON.stringify({ schema })
 const options = {
   hostname: PROOF_URL,
   port: 3000,
   path: `/api/forms/${PROOF_FORM_PROVIDER}/${PROOF_FORM_ID}/schemata`,
   method: 'POST',
+  headers: {
+    Accept: 'application/json',
+    Authorization: `Bearer ${PROOF_API_TOKEN}`,
+    'Content-Type': 'application/json',
+    'Content-Length': Buffer.byteLength(stringifiedSchema),
+  },
 }
 
 if (arguments['--dry-run']) {
@@ -43,14 +55,18 @@ if (arguments['--dry-run']) {
   console.log('arguments =', arguments)
   console.log('env =', { PROOF_URL, PROOF_FORM_ID, PROOF_FORM_PROVIDER })
   console.log('schema =', schema)
+  console.log('options =', options)
   process.exit()
 }
 
 const request = http.request(options, response => {
   console.log('statusCode:', response.statusCode)
+  response.on('data', chunk => {
+    console.log(`BODY: ${chunk}`)
+  })
 })
 request.on('error', error => {
   console.error(error)
 })
-request.write(JSON.stringify(schema))
+request.write(stringifiedSchema)
 request.end()
