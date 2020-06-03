@@ -4,6 +4,18 @@ const { docopt } = require('docopt')
 const faker = require('faker/locale/en_CA')
 const http = require('http')
 
+// command line usage
+doc = `
+Usage:
+  generate-submission [--days-ago=<numberOfDays>] [--destination=<destination>] [--dry-run]
+  generate-submission -h | --help | --version
+`
+
+var arguments = docopt(doc, {
+  version: '0.0.1',
+})
+
+// Constant packs.
 const YUKON_COMMUNITIES = [
   'Beaver Creek',
   'Burwash Landing',
@@ -56,6 +68,7 @@ const POINTS_OF_ENTRY = [
 
 const AIRLINES_TO_THE_YUKON = ['Air North', 'Air Canada']
 
+// Some extra fakes, mostly for Yukon specific things.
 const custom_fakes = {
   ALPHABET: 'abcdefghijklmnopqrstuvwxyz'.split(''),
   NUMBERS: '0123456789'.split(''),
@@ -114,7 +127,19 @@ const OUTSIDE_YUKON = DESTINATIONS.length
 const travellerIdentifier = faker.random.objectElement(TRAVELLER_IDENTIFIERS)
 const hasCovidSymtoms = faker.random.objectElement(HAS_COVID_SYMPTOMS)
 const travelMode = faker.random.objectElement(TRAVEL_MODE)
-const destination = faker.random.arrayElement(DESTINATIONS)
+const destination =
+  (arguments['--destination'] &&
+    DESTINATIONS[Number(arguments['--destination']) - 1]) ||
+  faker.random.arrayElement(DESTINATIONS)
+const initialDate = new Date()
+const dateOfEntry = (
+  (arguments['--days-ago'] &&
+    initialDate.setDate(
+      initialDate.getDate() - Number(arguments['--days-ago'])
+    ) &&
+    initialDate) ||
+  faker.date.recent(90)
+).toLocaleDateString()
 
 const submission = {
   'traveller.Identifier': travellerIdentifier,
@@ -165,12 +190,9 @@ const submission = {
       : '',
   'officeuse.flightNumber':
     travelMode === TRAVEL_MODE.FLIGHT ? custom_fakes.flightNumber() : '',
-  'officeuse.Dateentry': faker.date.recent(90).toLocaleDateString(),
+  'officeuse.Dateentry': dateOfEntry,
   'officeuse.Timeentry': faker.date.recent().toLocaleTimeString(),
-  'destionation.structured': faker.random.arrayElement([
-    ...YUKON_COMMUNITIES,
-    'Outside Yukon',
-  ]),
+  'destionation.structured': destination,
   'destination.other':
     destination === OUTSIDE_YUKON ? faker.address.city() : null,
   'officeuse.ID': faker.random.arrayElement(
@@ -181,25 +203,7 @@ const submission = {
   ),
 }
 
-// post data via http or axios
-
-doc = `
-Usage:
-  generate-submission [--date=<date>] [--destination=<destination]
-  generate-submission -h | --help | --version | --dry-run
-
-Info:
-  preferred date format ISO Date  "2015-03-25" (The International Standard)
-`
-
-var arguments = docopt(doc, {
-  version: '0.0.1',
-})
-
-// use docopt for arg parsing
-// requires --date and --destination options
-// console.log(process.argv)
-
+// Send the data
 const { PROOF_URL, PROOF_FORM_ID, PROOF_FORM_PROVIDER } = process.env
 
 const options = {
