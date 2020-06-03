@@ -11,6 +11,9 @@
   "license": "MIT",
   "private": true,
   "dependencies": {
-    "express": "^4.17.1"
+    "docopt": "^0.6.2",
+    "express": "^4.17.1",
+    "faker": "^4.1.0",
+    "js-yaml": "^3.14.0"
   }
 }
