@@ -1,0 +1,56 @@
+#!/usr/bin/env node
+
+const { docopt } = require('docopt')
+const fs = require('fs')
+const http = require('http')
+var path = require('path')
+const yaml = require('js-yaml')
+
+// command line usage
+doc = `
+Usage:
+  setup-form [--dry-run]
+  setup-form -h | --help | --version
+`
+
+var arguments = docopt(doc, {
+  version: '0.0.1',
+})
+
+// Get document, or throw exception on error
+let schema
+try {
+  const binDir = path.dirname(__filename)
+  const schemaPath = path.resolve(binDir, '../schema.yaml')
+  schema = yaml.safeLoad(fs.readFileSync(schemaPath, 'utf8'))
+} catch (error) {
+  console.log(error)
+}
+
+// Send the data
+const { PROOF_URL, PROOF_FORM_ID, PROOF_FORM_PROVIDER } = process.env
+
+const options = {
+  hostname: PROOF_URL,
+  port: 3000,
+  path: `api/forms/${PROOF_FORM_PROVIDER}/${PROOF_FORM_ID}/schemata`,
+  method: 'POST',
+}
+
+if (arguments['--dry-run']) {
+  const scriptName = path.basename(__filename)
+  console.log(`Dry run of "bin/${scriptName}"\n`)
+  console.log('arguments =', arguments)
+  console.log('env =', { PROOF_URL, PROOF_FORM_ID, PROOF_FORM_PROVIDER })
+  console.log('schema =', schema)
+  process.exit()
+}
+
+const request = http.request(options, response => {
+  console.log('statusCode:', response.statusCode)
+})
+request.on('error', error => {
+  console.error(error)
+})
+request.write(JSON.stringify(schema))
+request.end()
