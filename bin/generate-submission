@@ -235,15 +235,44 @@ function sendSubmission (submission) {
     },
   }
 
-  const request = requester.request(options, response => {
-    console.log('statusCode:', response.statusCode)
-    response.on('data', chunk => {
-      console.log(`BODY: ${chunk}`)
+  const request = requester
+    .request(options, response => {
+      const { statusCode, headers } = response
+
+      let rawData = ''
+      response.on('data', chunk => {
+        rawData += chunk
+      })
+      response.on('end', () => {
+        let parsedData = {}
+        if (/application\/json/.test(headers['content-type'])) {
+          try {
+            parsedData = JSON.parse(rawData)
+          } catch (error) {
+            // nop
+          }
+        }
+        switch (statusCode) {
+          case 200:
+          case 201:
+            console.log('Created a submision')
+            console.log('parsedData =', parsedData)
+            break
+          case 409:
+            console.log('Conflict')
+            console.log('statusCode =', statusCode)
+            console.log('options =', options)
+            break
+          default:
+            console.log('Unknown Error')
+            console.log('statusCode =', statusCode)
+            console.log('rawData = ', rawData)
+        }
+      })
     })
-  })
-  request.on('error', error => {
-    console.error(error)
-  })
+    .on('error', error => {
+      console.error(error)
+    })
   request.write(stringifiedSubmission)
   request.end()
 }
