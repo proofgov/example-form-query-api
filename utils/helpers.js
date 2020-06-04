@@ -1,5 +1,8 @@
-var path = require('path')
 const fs = require('fs')
+const http = require('http')
+const https = require('https')
+const path = require('path')
+const url = require('url')
 const yaml = require('js-yaml')
 
 const utilsDir = path.dirname(__filename)
@@ -53,7 +56,7 @@ function loadSchema () {
 function selectRequestLibrary () {
   const { PROOF_URL } = process.env
   const { protocol } = url.parse(PROOF_URL)
-  return protocol === 'https:' ? require('https') : require('http')
+  return protocol === 'https:' ? https : http
 }
 
 module.exports = {
