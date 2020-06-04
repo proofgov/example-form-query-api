@@ -2,7 +2,13 @@
 
 const { docopt } = require('docopt')
 const faker = require('faker/locale/en_CA')
-const http = require('http')
+const path = require('path')
+
+const binDir = path.dirname(__filename)
+const { requester, protocol, hostname, port } = require(path.resolve(
+  binDir,
+  '../utils/helpers'
+))
 
 // command line usage
 doc = `
@@ -72,33 +78,33 @@ const AIRLINES_TO_THE_YUKON = ['Air North', 'Air Canada']
 const custom_fakes = {
   ALPHABET: 'abcdefghijklmnopqrstuvwxyz'.split(''),
   NUMBERS: '0123456789'.split(''),
-  fullName() {
+  fullName () {
     return `${faker.name.firstName()} ${faker.name.lastName()}`
   },
-  yukonAddress() {
+  yukonAddress () {
     return `${faker.address.streetAddress()}, ${faker.random.arrayElement(
       YUKON_COMMUNITIES
     )}, YT, ${faker.address.zipCode()}`
   },
-  yukonLicensePlate() {
+  yukonLicensePlate () {
     return faker.random.alphaNumeric(5).toUpperCase()
   },
-  yukonPhoneNumber() {
+  yukonPhoneNumber () {
     return faker.phone.phoneNumber('867-###-###')
   },
-  flightNumber() {
+  flightNumber () {
     return `${custom_fakes.alpha(2).toUpperCase()}${custom_fakes.numeric(
       faker.random.number({ min: 1, max: 4 })
     )}`
   },
-  alpha(count) {
+  alpha (count) {
     let wholeString = ''
     for (let i = 0; i < (count || 1); i++) {
       wholeString += faker.random.arrayElement(custom_fakes.ALPHABET)
     }
     return wholeString
   },
-  numeric(count) {
+  numeric (count) {
     let wholeString = ''
     for (let i = 0; i < (count || 1); i++) {
       wholeString += faker.random.arrayElement(custom_fakes.NUMBERS)
@@ -208,15 +214,16 @@ const { PROOF_URL, PROOF_FORM_ID, PROOF_FORM_PROVIDER } = process.env
 
 const stringifiedSubmission = JSON.stringify(submission)
 const options = {
-  hostname: PROOF_URL,
-  port: 3000,
+  protocol,
+  port,
+  hostname,
   path: `/forms/${PROOF_FORM_PROVIDER}/${PROOF_FORM_ID}/submit`,
   method: 'POST',
   headers: {
     Accept: 'application/json',
     'Content-Type': 'application/json',
     'Content-Length': Buffer.byteLength(stringifiedSubmission),
-  }
+  },
 }
 
 if (arguments['--dry-run']) {
@@ -228,14 +235,14 @@ if (arguments['--dry-run']) {
   process.exit()
 }
 
-const request = http.request(options, response => {
+const request = requester.request(options, response => {
   console.log('statusCode:', response.statusCode)
   response.on('data', chunk => {
     console.log(`BODY: ${chunk}`)
   })
 })
-request.on('error', e => {
-  console.error(e)
+request.on('error', error => {
+  console.error(error)
 })
 request.write(stringifiedSubmission)
 request.end()
