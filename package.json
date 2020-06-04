@@ -4,6 +4,7 @@
   "description": "Example Node App for Proof Form Query API",
   "main": "index.js",
   "scripts": {
+    "setup": "bin/setup-form",
     "server": "node index.js"
   },
   "repository": "git@github.com:proofgov/example-form-query-api.git",
@@ -11,6 +12,9 @@
   "license": "MIT",
   "private": true,
   "dependencies": {
-    "express": "^4.17.1"
+    "docopt": "^0.6.2",
+    "express": "^4.17.1",
+    "faker": "^4.1.0",
+    "js-yaml": "^3.14.0"
   }
 }

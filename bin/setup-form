@@ -1,0 +1,188 @@
+#!/usr/bin/env node
+
+const { docopt } = require('docopt')
+const path = require('path')
+
+const binDir = path.dirname(__filename)
+const {
+  loadProviderInfo,
+  saveProviderInfo,
+  loadSchema,
+  requester,
+  protocol,
+  hostname,
+  port,
+} = require(path.resolve(binDir, '../utils/helpers'))
+
+// command line usage
+doc = `
+Usage:
+  setup-form [--dry-run]
+  setup-form -h | --help | --version
+`
+
+var arguments = docopt(doc, {
+  version: '0.0.1',
+})
+
+// Create form config
+function createFormConfig ({ protocol, hostname, port }, apiToken) {
+  const { providerIdentifier, provider, id } = loadProviderInfo()
+
+  if (id) {
+    console.log(`Provider info loaded, and form config id of "${id}" found.`)
+    return
+  }
+
+  const data = JSON.stringify({ providerIdentifier, provider })
+  const options = {
+    protocol,
+    port,
+    hostname,
+    path: '/api/form_configs',
+    method: 'POST',
+    headers: {
+      Accept: 'application/json',
+      Authorization: `Bearer ${apiToken}`,
+      'Content-Type': 'application/json',
+      'Content-Length': Buffer.byteLength(data),
+    },
+  }
+
+  const request = requester
+    .request(options, response => {
+      const { statusCode } = response
+
+      let rawData = ''
+      response.on('data', chunk => {
+        rawData += chunk
+      })
+      response.on('end', () => {
+        let parsedData = {}
+        try {
+          parsedData = JSON.parse(rawData)
+        } catch (error) {
+          console.log('JSON Parsing Error')
+          console.log('statusCode =', statusCode)
+          console.log('rawData = ', rawData)
+          return
+        }
+        switch (statusCode) {
+          case 200:
+          case 201:
+            console.log('Saving Provider Info ...')
+            saveProviderInfo(parsedData)
+            break
+          case 422:
+            console.log('Unprocessable Entity')
+            console.log('statusCode =', statusCode)
+            console.log('options =', options)
+            console.log('data =', data)
+            console.log('error =', parsedData.errors)
+            break
+          default:
+            console.log('Unknown Error')
+            console.log('statusCode =', statusCode)
+            console.log('rawData = ', rawData)
+        }
+      })
+    })
+    .on('error', error => {
+      console.error(error)
+      process.exit(1)
+    })
+  request.write(data)
+  request.end()
+}
+
+function updateSchema ({ protocol, hostname, port }, apiToken, schema) {
+  const { provider: formProvider, id: formId } = loadProviderInfo()
+  const data = JSON.stringify({ schema })
+  const options = {
+    protocol,
+    port,
+    hostname,
+    path: `/api/forms/${formProvider}/${formId}/schemata`,
+    method: 'POST',
+    headers: {
+      Accept: 'application/json',
+      Authorization: `Bearer ${apiToken}`,
+      'Content-Type': 'application/json',
+      'Content-Length': Buffer.byteLength(data),
+    },
+  }
+  const request = requester
+    .request(options, response => {
+      const { statusCode } = response
+
+      let rawData = ''
+      response.on('data', chunk => {
+        rawData += chunk
+      })
+      response.on('end', () => {
+        let parsedData = {}
+        try {
+          parsedData = JSON.parse(rawData)
+        } catch (error) {
+          console.log('JSON Parsing Error')
+          console.log('statusCode =', statusCode)
+          console.log('rawData = ', rawData)
+          return
+        }
+        switch (statusCode) {
+          case 200:
+          case 201:
+            console.log('Updated Schema')
+            console.log('response =', parsedData)
+            break
+          case 422:
+            console.log('Unprocessable Entity')
+            console.log('statusCode =', statusCode)
+            console.log('options =', options)
+            console.log('data =', data)
+            console.log('error =', parsedData.errors)
+            break
+          default:
+            console.log('Unknown Error')
+            console.log('statusCode =', statusCode)
+            console.log('rawData = ', rawData)
+        }
+      })
+    })
+    .on('error', error => {
+      console.error(error)
+      process.exit(1)
+    })
+  request.write(data)
+  request.end()
+}
+
+// load environment variables
+const {
+  PROOF_URL,
+  PROOF_FORM_ID,
+  PROOF_FORM_PROVIDER,
+  PROOF_FORM_PROVIDER_ID,
+  PROOF_API_TOKEN,
+} = process.env
+
+const schema = loadSchema()
+
+if (arguments['--dry-run']) {
+  const scriptName = path.basename(__filename)
+  console.log(`Dry run of "bin/${scriptName}"\n`)
+  console.log('arguments =', arguments)
+  console.log('env =', {
+    PROOF_URL,
+    PROOF_FORM_ID,
+    PROOF_FORM_PROVIDER,
+    PROOF_FORM_PROVIDER_ID,
+    PROOF_API_TOKEN,
+  })
+  console.log('providerInfo =', loadProviderInfo())
+  console.log('schema =', schema)
+  process.exit()
+}
+
+createFormConfig({ protocol, hostname, port }, PROOF_API_TOKEN)
+updateSchema({ protocol, hostname, port }, PROOF_API_TOKEN, schema)
