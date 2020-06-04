@@ -22,64 +22,70 @@ var arguments = docopt(doc, {
 })
 
 // Create form config
-function createFormConfig () {
-  const { formProvider, provider, id } = loadProviderInfo()
+function createFormConfig (hostname, apiToken) {
+  const { providerIdentifier, provider, id } = loadProviderInfo()
 
   if (id) {
-    console.log(`Form Config exists using id: ${id}`)
+    console.log(`Provider info loaded, and form config id of "${id}" found.`)
     return
   }
 
-  const data = JSON.stringify({ formProvider, provider })
+  const data = JSON.stringify({ providerIdentifier, provider })
   const options = {
-    hostname: PROOF_URL,
+    hostname,
     port: 3000,
     path: '/api/form_configs',
     method: 'POST',
     headers: {
       Accept: 'application/json',
-      Authorization: `Bearer ${PROOF_API_TOKEN}`,
+      Authorization: `Bearer ${apiToken}`,
       'Content-Type': 'application/json',
       'Content-Length': Buffer.byteLength(data),
     },
   }
 
-  const request = http.request(options, response => {
-    let json_body = ''
-    response.on('data', chunk => {
-      json_body += chunk
-    })
-    response.on('end', () => {
-      if (/application\/json/.test(response.headers['content-type'])) {
-        body = JSON.parse(json_body)
-      } else {
-        console.log('content-type = ', response.headers['content-type'])
-      }
-      switch (response.statusCode) {
-        case 200:
-        case 201:
-          saveProviderInfo(body)
-          break
-        case 422:
-          console.log('Unprocessable Entity')
+  const request = http
+    .request(options, response => {
+      const { statusCode } = response
+
+      let rawData = ''
+      response.on('data', chunk => {
+        rawData += chunk
+      })
+      response.on('end', () => {
+        let parsedData = {}
+        try {
+          parsedData = JSON.parse(rawData)
+        } catch (error) {
+          console.log('JSON Parsing Error')
           console.log('statusCode =', response.statusCode)
-          console.log('options =', options)
-          console.log('data =', JSON.parse(data))
-          console.log('error =', body.errors)
-          // Hard exit on failure
-          process.exit(1)
-          break
-        default:
-          console.log('Unknown Error')
-          console.log('statusCode =', response.statusCode)
-          console.log('body = ', json_body)
-          process.exit(1)
-      }
+          console.log('rawData = ', rawData)
+          return
+        }
+        switch (statusCode) {
+          case 200:
+          case 201:
+            console.log('Saving Provider Info ...')
+            saveProviderInfo(parsedData)
+            break
+          case 422:
+            console.log('Unprocessable Entity')
+            console.log('statusCode =', response.statusCode)
+            console.log('options =', options)
+            console.log('data =', data)
+            console.log('error =', parsedData.errors)
+            break
+          default:
+            console.log('Unknown Error')
+            console.log('statusCode =', response.statusCode)
+            console.log('rawData = ', rawData)
+        }
+      })
     })
-  })
-  request.on('error', error => {
-    console.error(error)
-  })
+    .on('error', error => {
+      console.error(error)
+      process.exit(1)
+    })
   request.write(data)
   request.end()
 }
@@ -140,5 +146,5 @@ if (arguments['--dry-run']) {
   process.exit()
 }
 
-createFormConfig()
+createFormConfig(PROOF_URL, PROOF_API_TOKEN)
 updateSchema(schema)
