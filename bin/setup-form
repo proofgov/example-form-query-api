@@ -9,6 +9,9 @@ const {
   saveProviderInfo,
   loadSchema,
   requester,
+  protocol,
+  hostname,
+  port,
 } = require(path.resolve(binDir, '../utils/helpers'))
 
 // command line usage
@@ -181,6 +184,5 @@ if (arguments['--dry-run']) {
   process.exit()
 }
 
-const { protocol, hostname, port } = url.parse(PROOF_URL)
 createFormConfig({ protocol, hostname, port }, PROOF_API_TOKEN)
 updateSchema({ protocol, hostname, port }, PROOF_API_TOKEN, schema)
