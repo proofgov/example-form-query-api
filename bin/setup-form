@@ -5,6 +5,8 @@ const fs = require('fs')
 const http = require('http')
 var path = require('path')
 const yaml = require('js-yaml')
+const binDir = path.dirname(__filename)
+const { loadProviderInfo, saveProviderInfo } = require(path.resolve(binDir, '../utils/helpers'))
 
 // command line usage
 doc = `
@@ -18,8 +20,6 @@ var arguments = docopt(doc, {
 })
 
 // load environment variables
-const binDir = path.dirname(__filename)
-const providerInfoPath = path.resolve(binDir, '../provider_info.yaml')
 const {
   PROOF_URL,
   PROOF_FORM_ID,
@@ -30,35 +30,6 @@ const {
 
 // Create form config
 function createFormConfig () {
-  function loadProviderInfo () {
-    let providerInfo
-    try {
-      providerInfo = yaml.safeLoad(fs.readFileSync(providerInfoPath, 'utf8'))
-    } catch (error) {
-      providerInfo = {}
-    }
-
-    return {
-      provider: PROOF_FORM_PROVIDER || providerInfo.provider || 'proof',
-      providerIdentifier:
-        PROOF_FORM_PROVIDER_ID ||
-        providerInfo.providerIdentifier ||
-        `proof/form-example/${Date.now()}`,
-    }
-  }
-
-  function saveProviderInfo ({ provider, providerIdentifier }) {
-    try {
-      fs.readFileSync(
-        providerInfoPath,
-        yaml.safeDump({ provider, providerIdentifier }),
-        'utf8'
-      )
-    } catch (error) {
-      console.log('error =', error)
-    }
-  }
-
   const data = JSON.stringify(loadProviderInfo())
   const options = {
     hostname: PROOF_URL,
@@ -74,21 +45,20 @@ function createFormConfig () {
   }
 
   const request = http.request(options, response => {
-    console.log('statusCode:', response.statusCode)
     let json_body = ''
     response.on('data', chunk => {
       json_body += chunk
-      if (response.statusCode === 422) return
-
-      console.log(`BODY: ${chunk}`)
     })
     response.on('end', () => {
       body = JSON.parse(json_body)
       switch (response.statusCode) {
+        case 200:
         case 201:
           saveProviderInfo(body)
           break
         case 422:
+          console.log('Unprocessable Entity')
+          console.log('statusCode =', response.statusCode)
           console.log('options =', options)
           console.log('data =', JSON.parse(data))
           console.log('error =', body.errors)
@@ -96,8 +66,10 @@ function createFormConfig () {
           process.exit(1)
           break
         default:
-          console.log('Created new config.')
-          console.log('body', body)
+          console.log('Unknown Error')
+          console.log('statusCode =', response.statusCode)
+          console.log('body = ', json_body)
+          process.exit()
       }
     })
   })
