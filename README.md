@@ -9,3 +9,5 @@ export PROOF_API_TOKEN=<some-token>
 3. Run `bin/generate-submission` to push a submission.
 
 Both `bin/setup-form` and `bin/generate-submission` support a --help option.
+
+> Note that the `bin/setup-form` creates a `provider_info.yaml` file that is used for subsequent requests.
