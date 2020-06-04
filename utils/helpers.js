@@ -4,6 +4,7 @@ const yaml = require('js-yaml')
 
 const utilsDir = path.dirname(__filename)
 const providerInfoPath = path.resolve(utilsDir, '../provider_info.yaml')
+const schemaPath = path.resolve(utilsDir, '../schema.yaml')
 
 function loadProviderInfo () {
   let providerInfo
@@ -13,7 +14,11 @@ function loadProviderInfo () {
     providerInfo = {}
   }
 
-  const { PROOF_FORM_ID, PROOF_FORM_PROVIDER, PROOF_FORM_PROVIDER_ID } = process.env
+  const {
+    PROOF_FORM_ID,
+    PROOF_FORM_PROVIDER,
+    PROOF_FORM_PROVIDER_ID,
+  } = process.env
 
   return {
     provider: PROOF_FORM_PROVIDER || providerInfo.provider || 'proof',
@@ -21,10 +26,9 @@ function loadProviderInfo () {
       PROOF_FORM_PROVIDER_ID ||
       providerInfo.providerIdentifier ||
       `proof/form-example/${Date.now()}`,
-    id: PROOF_FORM_ID || providerInfo.id || null
+    id: PROOF_FORM_ID || providerInfo.id || null,
   }
 }
-
 
 function saveProviderInfo ({ provider, providerIdentifier, id }) {
   try {
@@ -38,7 +42,16 @@ function saveProviderInfo ({ provider, providerIdentifier, id }) {
   }
 }
 
+function loadSchema () {
+  try {
+    return yaml.safeLoad(fs.readFileSync(schemaPath, 'utf8'))
+  } catch (error) {
+    console.log(error)
+  }
+}
+
 module.exports = {
   loadProviderInfo,
-  saveProviderInfo
+  saveProviderInfo,
+  loadSchema,
 }

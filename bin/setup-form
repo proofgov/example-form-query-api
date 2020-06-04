@@ -1,12 +1,14 @@
 #!/usr/bin/env node
 
 const { docopt } = require('docopt')
-const fs = require('fs')
 const http = require('http')
 var path = require('path')
-const yaml = require('js-yaml')
+
 const binDir = path.dirname(__filename)
-const { loadProviderInfo, saveProviderInfo } = require(path.resolve(binDir, '../utils/helpers'))
+const { loadProviderInfo, saveProviderInfo, loadSchema } = require(path.resolve(
+  binDir,
+  '../utils/helpers'
+))
 
 // command line usage
 doc = `
@@ -19,18 +21,16 @@ var arguments = docopt(doc, {
   version: '0.0.1',
 })
 
-// load environment variables
-const {
-  PROOF_URL,
-  PROOF_FORM_ID,
-  PROOF_FORM_PROVIDER,
-  PROOF_FORM_PROVIDER_ID,
-  PROOF_API_TOKEN,
-} = process.env
-
 // Create form config
 function createFormConfig () {
-  const data = JSON.stringify(loadProviderInfo())
+  const { formProvider, provider, id } = loadProviderInfo()
+
+  if (id) {
+    console.log(`Form Config exists using id: ${id}`)
+    return
+  }
+
+  const data = JSON.stringify({ formProvider, provider })
   const options = {
     hostname: PROOF_URL,
     port: 3000,
@@ -50,7 +50,11 @@ function createFormConfig () {
       json_body += chunk
     })
     response.on('end', () => {
-      body = JSON.parse(json_body)
+      if (/application\/json/.test(response.headers['content-type'])) {
+        body = JSON.parse(json_body)
+      } else {
+        console.log('content-type = ', response.headers['content-type'])
+      }
       switch (response.statusCode) {
         case 200:
         case 201:
@@ -69,7 +73,7 @@ function createFormConfig () {
           console.log('Unknown Error')
           console.log('statusCode =', response.statusCode)
           console.log('body = ', json_body)
-          process.exit()
+          process.exit(1)
       }
     })
   })
@@ -82,11 +86,12 @@ function createFormConfig () {
 
 function updateSchema (schema) {
   // Send the data
+  const { provider: formProvider, id: formId } = loadProviderInfo()
   const data = JSON.stringify({ schema })
   const options = {
     hostname: PROOF_URL,
     port: 3000,
-    path: `/api/forms/${PROOF_FORM_PROVIDER}/${PROOF_FORM_ID}/schemata`,
+    path: `/api/forms/${formProvider}/${formId}/schemata`,
     method: 'POST',
     headers: {
       Accept: 'application/json',
@@ -108,14 +113,16 @@ function updateSchema (schema) {
   request.end()
 }
 
-// Get document, or throw exception on error
-let schema
-try {
-  const schemaPath = path.resolve(binDir, '../schema.yaml')
-  schema = yaml.safeLoad(fs.readFileSync(schemaPath, 'utf8'))
-} catch (error) {
-  console.log(error)
-}
+// load environment variables
+const {
+  PROOF_URL,
+  PROOF_FORM_ID,
+  PROOF_FORM_PROVIDER,
+  PROOF_FORM_PROVIDER_ID,
+  PROOF_API_TOKEN,
+} = process.env
+
+const schema = loadSchema()
 
 if (arguments['--dry-run']) {
   const scriptName = path.basename(__filename)
@@ -128,9 +135,10 @@ if (arguments['--dry-run']) {
     PROOF_FORM_PROVIDER_ID,
     PROOF_API_TOKEN,
   })
+  console.log('providerInfo =', loadProviderInfo())
   console.log('schema =', schema)
   process.exit()
 }
 
 createFormConfig()
-// updateSchema(schema)
+updateSchema(schema)
