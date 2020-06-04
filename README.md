@@ -4,7 +4,6 @@
 ```bash
 export PROOF_URL=https://app.proofgov.com
 export PROOF_API_TOKEN=<some-token>
-export PROOF_FORM_PROVIDER=proof
 ```
 2. Run `bin/setup-form` to push a schema.
 3. Run `bin/generate-submission` to push a submission.
