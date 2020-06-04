@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 
 const { docopt } = require('docopt')
-const http = require('http')
-var path = require('path')
+const path = require('path')
+const url = require('url')
 
 const binDir = path.dirname(__filename)
 const { loadProviderInfo, saveProviderInfo, loadSchema } = require(path.resolve(
@@ -22,7 +22,7 @@ var arguments = docopt(doc, {
 })
 
 // Create form config
-function createFormConfig (hostname, apiToken) {
+function createFormConfig ({ protocol, hostname, port }, apiToken) {
   const { providerIdentifier, provider, id } = loadProviderInfo()
 
   if (id) {
@@ -32,8 +32,9 @@ function createFormConfig (hostname, apiToken) {
 
   const data = JSON.stringify({ providerIdentifier, provider })
   const options = {
+    protocol,
+    port,
     hostname,
-    port: 3000,
     path: '/api/form_configs',
     method: 'POST',
     headers: {
@@ -44,7 +45,7 @@ function createFormConfig (hostname, apiToken) {
     },
   }
 
-  const request = http
+  const request = requester
     .request(options, response => {
       const { statusCode } = response
 
@@ -90,12 +91,13 @@ function createFormConfig (hostname, apiToken) {
   request.end()
 }
 
-function updateSchema (hostname, apiToken, schema) {
+function updateSchema ({ protocol, hostname, port }, apiToken, schema) {
   const { provider: formProvider, id: formId } = loadProviderInfo()
   const data = JSON.stringify({ schema })
   const options = {
+    protocol,
+    port,
     hostname,
-    port: 3000,
     path: `/api/forms/${formProvider}/${formId}/schemata`,
     method: 'POST',
     headers: {
@@ -105,7 +107,7 @@ function updateSchema (hostname, apiToken, schema) {
       'Content-Length': Buffer.byteLength(data),
     },
   }
-  const request = http.request(options, response => {
+  const request = requester.request(options, response => {
     const { statusCode } = response
 
       let rawData = ''
@@ -176,5 +178,8 @@ if (arguments['--dry-run']) {
   process.exit()
 }
 
-createFormConfig(PROOF_URL, PROOF_API_TOKEN)
-updateSchema(PROOF_URL, PROOF_API_TOKEN, schema)
+const { protocol, hostname, port } = url.parse(PROOF_URL)
+const requester = protocol === 'https:' ? require('https') : require('http')
+
+createFormConfig({ protocol, hostname, port }, PROOF_API_TOKEN)
+updateSchema({ protocol, hostname, port }, PROOF_API_TOKEN, schema)
