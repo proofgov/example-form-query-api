@@ -50,8 +50,15 @@ function loadSchema () {
   }
 }
 
+function selectRequestLibrary () {
+  const { PROOF_URL } = process.env
+  const { protocol } = url.parse(PROOF_URL)
+  return protocol === 'https:' ? require('https') : require('http')
+}
+
 module.exports = {
   loadProviderInfo,
   saveProviderInfo,
   loadSchema,
+  requester: selectRequestLibrary(),
 }

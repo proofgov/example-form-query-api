@@ -5,10 +5,12 @@ const path = require('path')
 const url = require('url')
 
 const binDir = path.dirname(__filename)
-const { loadProviderInfo, saveProviderInfo, loadSchema } = require(path.resolve(
-  binDir,
-  '../utils/helpers'
-))
+const {
+  loadProviderInfo,
+  saveProviderInfo,
+  loadSchema,
+  requester,
+} = require(path.resolve(binDir, '../utils/helpers'))
 
 // command line usage
 doc = `
@@ -107,8 +109,9 @@ function updateSchema ({ protocol, hostname, port }, apiToken, schema) {
       'Content-Length': Buffer.byteLength(data),
     },
   }
-  const request = requester.request(options, response => {
-    const { statusCode } = response
+  const request = requester
+    .request(options, response => {
+      const { statusCode } = response
 
       let rawData = ''
       response.on('data', chunk => {
@@ -143,10 +146,11 @@ function updateSchema ({ protocol, hostname, port }, apiToken, schema) {
             console.log('rawData = ', rawData)
         }
       })
-  }).on('error', error => {
-    console.error(error)
-    process.exit(1)
-  })
+    })
+    .on('error', error => {
+      console.error(error)
+      process.exit(1)
+    })
   request.write(data)
   request.end()
 }
@@ -179,7 +183,5 @@ if (arguments['--dry-run']) {
 }
 
 const { protocol, hostname, port } = url.parse(PROOF_URL)
-const requester = protocol === 'https:' ? require('https') : require('http')
-
 createFormConfig({ protocol, hostname, port }, PROOF_API_TOKEN)
 updateSchema({ protocol, hostname, port }, PROOF_API_TOKEN, schema)
