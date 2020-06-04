@@ -58,7 +58,7 @@ function createFormConfig (hostname, apiToken) {
           parsedData = JSON.parse(rawData)
         } catch (error) {
           console.log('JSON Parsing Error')
-          console.log('statusCode =', response.statusCode)
+          console.log('statusCode =', statusCode)
           console.log('rawData = ', rawData)
           return
         }
@@ -70,14 +70,14 @@ function createFormConfig (hostname, apiToken) {
             break
           case 422:
             console.log('Unprocessable Entity')
-            console.log('statusCode =', response.statusCode)
+            console.log('statusCode =', statusCode)
             console.log('options =', options)
             console.log('data =', data)
             console.log('error =', parsedData.errors)
             break
           default:
             console.log('Unknown Error')
-            console.log('statusCode =', response.statusCode)
+            console.log('statusCode =', statusCode)
             console.log('rawData = ', rawData)
         }
       })
@@ -90,30 +90,60 @@ function createFormConfig (hostname, apiToken) {
   request.end()
 }
 
-function updateSchema (schema) {
-  // Send the data
+function updateSchema (hostname, apiToken, schema) {
   const { provider: formProvider, id: formId } = loadProviderInfo()
   const data = JSON.stringify({ schema })
   const options = {
-    hostname: PROOF_URL,
+    hostname,
     port: 3000,
     path: `/api/forms/${formProvider}/${formId}/schemata`,
     method: 'POST',
     headers: {
       Accept: 'application/json',
-      Authorization: `Bearer ${PROOF_API_TOKEN}`,
+      Authorization: `Bearer ${apiToken}`,
       'Content-Type': 'application/json',
       'Content-Length': Buffer.byteLength(data),
     },
   }
   const request = http.request(options, response => {
-    console.log('statusCode:', response.statusCode)
-    response.on('data', chunk => {
-      console.log(`BODY: ${chunk}`)
-    })
-  })
-  request.on('error', error => {
+    const { statusCode } = response
+
+      let rawData = ''
+      response.on('data', chunk => {
+        rawData += chunk
+      })
+      response.on('end', () => {
+        let parsedData = {}
+        try {
+          parsedData = JSON.parse(rawData)
+        } catch (error) {
+          console.log('JSON Parsing Error')
+          console.log('statusCode =', statusCode)
+          console.log('rawData = ', rawData)
+          return
+        }
+        switch (statusCode) {
+          case 200:
+          case 201:
+            console.log('Updated Schema')
+            console.log('response =', parsedData)
+            break
+          case 422:
+            console.log('Unprocessable Entity')
+            console.log('statusCode =', statusCode)
+            console.log('options =', options)
+            console.log('data =', data)
+            console.log('error =', parsedData.errors)
+            break
+          default:
+            console.log('Unknown Error')
+            console.log('statusCode =', statusCode)
+            console.log('rawData = ', rawData)
+        }
+      })
+  }).on('error', error => {
     console.error(error)
+    process.exit(1)
   })
   request.write(data)
   request.end()
@@ -147,4 +177,4 @@ if (arguments['--dry-run']) {
 }
 
 createFormConfig(PROOF_URL, PROOF_API_TOKEN)
-updateSchema(schema)
+updateSchema(PROOF_URL, PROOF_API_TOKEN, schema)
