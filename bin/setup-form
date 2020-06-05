@@ -26,12 +26,12 @@ var arguments = docopt(doc, {
 })
 
 // Create form config
-function createFormConfig ({ protocol, hostname, port }, apiToken) {
+async function createFormConfig ({ protocol, hostname, port }, apiToken) {
   const { providerIdentifier, provider, id } = loadProviderInfo()
 
   if (id) {
     console.log(`Provider info loaded, and form config id of "${id}" found.`)
-    return Promise.resolve(id)
+    return id
   }
 
   const data = JSON.stringify({ providerIdentifier, provider })
