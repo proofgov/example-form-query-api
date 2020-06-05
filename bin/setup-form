@@ -189,4 +189,5 @@ if (arguments['--dry-run']) {
 
 createFormConfig({ protocol, hostname, port }, PROOF_API_TOKEN).then(() => {
   updateSchema({ protocol, hostname, port }, PROOF_API_TOKEN, schema)
+}).catch((error) => {
 })

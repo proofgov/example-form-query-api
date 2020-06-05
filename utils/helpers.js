@@ -10,7 +10,7 @@ const providerInfoPath = path.resolve(utilsDir, '../provider_info.yaml')
 const schemaPath = path.resolve(utilsDir, '../schema.yaml')
 
 const { PROOF_URL } = process.env
-const { protocol, hostname, port } = url.parse(PROOF_URL)
+const { protocol, hostname, port } = url.parse(PROOF_URL || '')
 
 function loadProviderInfo () {
   let providerInfo
