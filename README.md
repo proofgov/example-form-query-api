@@ -11,3 +11,5 @@ export PROOF_API_TOKEN=<some-token>
 Both `bin/setup-form` and `bin/generate-submission` support a --help option.
 
 > Note that the `bin/setup-form` creates a `provider_info.yaml` file that is used for subsequent requests.
+> 
+> Note: To run lots of submissions, just execute `while true; do bin/generate-submission; done`
