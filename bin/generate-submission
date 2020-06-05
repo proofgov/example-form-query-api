@@ -1,0 +1,291 @@
+#!/usr/bin/env node
+
+const { docopt } = require('docopt')
+const faker = require('faker/locale/en_CA')
+const path = require('path')
+
+const binDir = path.dirname(__filename)
+const {
+  requester,
+  protocol,
+  hostname,
+  port,
+  loadProviderInfo,
+} = require(path.resolve(binDir, '../utils/helpers'))
+
+// command line usage
+doc = `
+Usage:
+  generate-submission [--days-ago=<numberOfDays>] [--destination=<destination>] [--dry-run]
+  generate-submission -h | --help | --version
+`
+
+var arguments = docopt(doc, {
+  version: '0.0.1',
+})
+
+// Constant packs.
+const YUKON_COMMUNITIES = [
+  'Beaver Creek',
+  'Burwash Landing',
+  'Carcross and Tagish',
+  'Carmacks',
+  'Dawson City',
+  'Faro',
+  'Haines Junction',
+  'Mayo',
+  'Mount Lorne',
+  'Old Crow',
+  'Pelly Crossing',
+  'Ross River',
+  'Teslin',
+  'Watson Lake',
+  'Whitehorse',
+]
+
+SUPPORT_ENTRY_DOCUMENTS = ['']
+
+const IDENTIFICATION = [
+  'Passport',
+  'Birth Certificate',
+  "Driver's License",
+  'Canadian military identification card',
+  'Government-issued identification card',
+  'Canadian citizenship card',
+  'Status card',
+]
+
+const POINTS_OF_ENTRY = [
+  'Whitehorse Airport',
+  'Alaska Hwy',
+  'Stewart Cassiar Hwy',
+  'Dempster Hwy',
+  'Dawson City Airport',
+  'Watson Lake Airport',
+  'Mayo Airport',
+  'Beaver Creek Airport',
+  'Burwash Landing Airport',
+  'Carcross Airport',
+  'Carmacks Airport',
+  'Faro Airport',
+  'Haines Junction Airport',
+  'Old Crow Airport',
+  'Pelly Crossing Airport',
+  'Ross River Airport',
+  'Teslin Airport',
+]
+
+const AIRLINES_TO_THE_YUKON = ['Air North', 'Air Canada']
+
+// Some extra fakes, mostly for Yukon specific things.
+const custom_fakes = {
+  ALPHABET: 'abcdefghijklmnopqrstuvwxyz'.split(''),
+  NUMBERS: '0123456789'.split(''),
+  fullName () {
+    return `${faker.name.firstName()} ${faker.name.lastName()}`
+  },
+  yukonAddress () {
+    return `${faker.address.streetAddress()}, ${faker.random.arrayElement(
+      YUKON_COMMUNITIES
+    )}, YT, ${faker.address.zipCode()}`
+  },
+  yukonLicensePlate () {
+    return faker.random.alphaNumeric(5).toUpperCase()
+  },
+  yukonPhoneNumber () {
+    return faker.phone.phoneNumber('867-###-###')
+  },
+  flightNumber () {
+    return `${custom_fakes.alpha(2).toUpperCase()}${custom_fakes.numeric(
+      faker.random.number({ min: 1, max: 4 })
+    )}`
+  },
+  alpha (count) {
+    let wholeString = ''
+    for (let i = 0; i < (count || 1); i++) {
+      wholeString += faker.random.arrayElement(custom_fakes.ALPHABET)
+    }
+    return wholeString
+  },
+  numeric (count) {
+    let wholeString = ''
+    for (let i = 0; i < (count || 1); i++) {
+      wholeString += faker.random.arrayElement(custom_fakes.NUMBERS)
+    }
+    return wholeString
+  },
+}
+
+function generateSubmission () {
+  // Conditional Form Logic Helpers
+  const TRAVELLER_IDENTIFIERS = Object.freeze({
+    RESIDENT: 1,
+    NON_RESIDENT_NON_TRANSIT: 2,
+    NON_RESIDENT: 3,
+  })
+  const HAS_COVID_SYMPTOMS = Object.freeze({
+    YES: 1,
+    NO: 2,
+  })
+  const TRAVEL_MODE = Object.freeze({
+    VEHICLE: 1,
+    FLIGHT: 2,
+  })
+  const DESTINATIONS = Object.freeze([...YUKON_COMMUNITIES, 'Outside Yukon'])
+  const OUTSIDE_YUKON = DESTINATIONS.length
+
+  const travellerIdentifier = faker.random.objectElement(TRAVELLER_IDENTIFIERS)
+  const hasCovidSymtoms = faker.random.objectElement(HAS_COVID_SYMPTOMS)
+  const travelMode = faker.random.objectElement(TRAVEL_MODE)
+  const destination =
+    (arguments['--destination'] &&
+      DESTINATIONS[Number(arguments['--destination']) - 1]) ||
+    faker.random.arrayElement(DESTINATIONS)
+  const initialDate = new Date()
+  const dateOfEntry = (
+    (arguments['--days-ago'] &&
+      initialDate.setDate(
+        initialDate.getDate() - Number(arguments['--days-ago'])
+      ) &&
+      initialDate) ||
+    faker.date.recent(90)
+  ).toLocaleDateString()
+
+  return {
+    'traveller.Identifier': travellerIdentifier,
+    'traveller.name': custom_fakes.fullName(),
+    'traveller.Address': custom_fakes.yukonAddress(),
+    'traveller.telephone': custom_fakes.yukonPhoneNumber(),
+    'entry.purpose': faker.random.number({ min: 1, max: 5 }),
+    'support.entrydocument': faker.random.arrayElement(SUPPORT_ENTRY_DOCUMENTS),
+    'outside.canada': faker.random.number({ min: 1, max: 2 }),
+    'locations.visited14days': faker.random.arrayElement([
+      faker.address.city(),
+      faker.address.country(),
+    ]),
+    'nonresident.nottransitPlan':
+      travellerIdentifier === TRAVELLER_IDENTIFIERS.NON_RESIDENT_NON_TRANSIT
+        ? faker.lorem.sentences(faker.random.number({ min: 1, max: 3 }))
+        : '',
+    'nonresident.transitPlan':
+      travellerIdentifier === TRAVELLER_IDENTIFIERS.NON_RESIDENT
+        ? faker.lorem.sentences(faker.random.number({ min: 1, max: 3 }))
+        : '',
+    'resident.yukonDeclaration':
+      travellerIdentifier === TRAVELLER_IDENTIFIERS.RESIDENT
+        ? faker.random.number({ min: 1, max: 2 })
+        : null,
+    'covid.SymptomYesNo': hasCovidSymtoms,
+    'covid.Symptoms':
+      hasCovidSymtoms === HAS_COVID_SYMPTOMS.YES
+        ? faker.random.number({ min: 1, max: 3 })
+        : null,
+    'nonresident.nottransitDeclaration':
+      travellerIdentifier === TRAVELLER_IDENTIFIERS.NON_RESIDENT_NON_TRANSIT
+        ? faker.random.number({ min: 1, max: 2 })
+        : null,
+    'nonresident.transitDeclaration':
+      travellerIdentifier === TRAVELLER_IDENTIFIERS.NON_RESIDENT
+        ? faker.random.number({ min: 1, max: 2 })
+        : null,
+    'pointofentry.Travel': faker.random.arrayElement(
+      POINTS_OF_ENTRY.map((_, index) => index + 1)
+    ),
+    'officeuse.travelMode': travelMode,
+    'officeuser.Licenseplate':
+      travelMode === TRAVEL_MODE.VEHICLE
+        ? custom_fakes.yukonLicensePlate()
+        : '',
+    'officeuser.Airline':
+      travelMode === TRAVEL_MODE.FLIGHT
+        ? faker.random.arrayElement(AIRLINES_TO_THE_YUKON)
+        : '',
+    'officeuse.flightNumber':
+      travelMode === TRAVEL_MODE.FLIGHT ? custom_fakes.flightNumber() : '',
+    'officeuse.Dateentry': dateOfEntry,
+    'officeuse.Timeentry': faker.date.recent().toLocaleTimeString(),
+    'destionation.structured': destination,
+    'destination.other':
+      destination === OUTSIDE_YUKON ? faker.address.city() : null,
+    'officeuse.ID': faker.random.arrayElement(
+      IDENTIFICATION.map((_, index) => index + 1)
+    ),
+    'officeuse.additionalRemarks': faker.lorem.sentences(
+      faker.random.number({ min: 0, max: 3 })
+    ),
+  }
+}
+
+// Send the data
+
+function sendSubmission (submission) {
+  const { provider: formProvider, id: formId } = loadProviderInfo()
+
+  const stringifiedSubmission = JSON.stringify(submission)
+  const options = {
+    protocol,
+    port,
+    hostname,
+    path: `/forms/${formProvider}/${formId}/submit`,
+    method: 'POST',
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+      'Content-Length': Buffer.byteLength(stringifiedSubmission),
+    },
+  }
+
+  const request = requester
+    .request(options, response => {
+      const { statusCode, headers } = response
+
+      let rawData = ''
+      response.on('data', chunk => {
+        rawData += chunk
+      })
+      response.on('end', () => {
+        let parsedData = {}
+        if (/application\/json/.test(headers['content-type'])) {
+          try {
+            parsedData = JSON.parse(rawData)
+          } catch (error) {
+            // nop
+          }
+        }
+        switch (statusCode) {
+          case 200:
+          case 201:
+            console.log('Created a submision')
+            console.log('parsedData =', parsedData)
+            break
+          case 409:
+            console.log('Conflict')
+            console.log('statusCode =', statusCode)
+            console.log('options =', options)
+            break
+          default:
+            console.log('Unknown Error')
+            console.log('statusCode =', statusCode)
+            console.log('rawData = ', rawData)
+        }
+      })
+    })
+    .on('error', error => {
+      console.error(error)
+    })
+  request.write(stringifiedSubmission)
+  request.end()
+}
+
+const { PROOF_URL, PROOF_FORM_ID, PROOF_FORM_PROVIDER } = process.env
+if (arguments['--dry-run']) {
+  console.log('Dry run of `generate-submission')
+  console.log('arguments =', arguments)
+  console.log('env =', { PROOF_URL, PROOF_FORM_ID, PROOF_FORM_PROVIDER })
+  console.log('submission =', submission)
+  console.log('options =', options)
+  process.exit()
+}
+
+const submission = generateSubmission()
+sendSubmission(submission)
