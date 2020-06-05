@@ -26,6 +26,7 @@ var arguments = docopt(doc, {
 
 // Constant packs.
 const YUKON_COMMUNITIES = [
+  'Whitehorse',
   'Beaver Creek',
   'Burwash Landing',
   'Carcross and Tagish',
@@ -40,7 +41,6 @@ const YUKON_COMMUNITIES = [
   'Ross River',
   'Teslin',
   'Watson Lake',
-  'Whitehorse',
 ]
 
 SUPPORT_ENTRY_DOCUMENTS = ['']
@@ -140,7 +140,7 @@ function generateSubmission () {
   const destination =
     (arguments['--destination'] &&
       DESTINATIONS[Number(arguments['--destination']) - 1]) ||
-    faker.random.arrayElement(DESTINATIONS)
+    faker.random.arrayElement(DESTINATIONS.map((_, idx) => idx + 1 ))
   const initialDate = new Date()
   const dateOfEntry = (
     (arguments['--days-ago'] &&
