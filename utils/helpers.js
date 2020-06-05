@@ -23,13 +23,13 @@ function loadProviderInfo () {
   const {
     PROOF_FORM_ID,
     PROOF_FORM_PROVIDER,
-    PROOF_FORM_PROVIDER_ID,
+    PROOF_FORM_PROVIDER_IDENTIFIER,
   } = process.env
 
   return {
     provider: PROOF_FORM_PROVIDER || providerInfo.provider || 'proof',
     providerIdentifier:
-      PROOF_FORM_PROVIDER_ID ||
+      PROOF_FORM_PROVIDER_IDENTIFIER ||
       providerInfo.providerIdentifier ||
       `proof/form-example/${Date.now()}`,
     id: PROOF_FORM_ID || providerInfo.id || null,

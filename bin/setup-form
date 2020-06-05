@@ -165,7 +165,7 @@ const {
   PROOF_URL,
   PROOF_FORM_ID,
   PROOF_FORM_PROVIDER,
-  PROOF_FORM_PROVIDER_ID,
+  PROOF_FORM_PROVIDER_IDENTIFIER,
   PROOF_API_TOKEN,
 } = process.env
 
@@ -179,7 +179,7 @@ if (arguments['--dry-run']) {
     PROOF_URL,
     PROOF_FORM_ID,
     PROOF_FORM_PROVIDER,
-    PROOF_FORM_PROVIDER_ID,
+    PROOF_FORM_PROVIDER_IDENTIFIER,
     PROOF_API_TOKEN,
   })
   console.log('providerInfo =', loadProviderInfo())
