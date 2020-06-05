@@ -104,8 +104,9 @@ const processServerResponse = (resolve, reject, response, context) => {
   })
 }
 
-
+// *************************
 // Express Application Setup
+// *************************
 
 app.get('/', (req, res) => res.send(
                                     '<h1>Welcome to the Example App for Proof Form Query API</h1>' +
@@ -160,9 +161,8 @@ app.get('/covid-cases', (req, res) => {
   }).catch((error, extra) => {
     console.log(" > Returned ERROR to client\n")
     res.status(500)
-    res.send(`${error}\n${JSON.stringify(extra || "")}`)
+    res.send(`${error}\n${JSON.stringify(extra) || ''}\n`)
   })
-
 })
 
 app.listen(listenPort, () => console.log(`Example app listening at http://localhost:${listenPort}`))
