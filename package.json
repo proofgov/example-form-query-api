@@ -4,7 +4,8 @@
   "description": "Example Node App for Proof Form Query API",
   "main": "index.js",
   "scripts": {
-    "setup": "bin/setup-form",
+    "setup-form": "bin/setup-form",
+    "generate-submission": "bin/generate-submission",
     "server": "node index.js"
   },
   "repository": "git@github.com:proofgov/example-form-query-api.git",
